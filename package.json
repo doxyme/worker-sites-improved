@@ -8,7 +8,6 @@
     "build-manifest": "./bin/build-manifest"
   },
   "scripts": {
-    "prepack": "npm run build",
     "build": "tsc -d",
     "format": "prettier --write '**/*.js'",
     "pretest": "npm run build",
