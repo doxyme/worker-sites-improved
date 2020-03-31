@@ -1,0 +1,109 @@
+#!/usr/bin/env node
+
+const TOML = require('@iarna/toml')
+const fs = require('fs')
+const path = require('path')
+const globby = require('globby')
+const { createHash } = require('crypto')
+
+const MANIFEST_FILE = 'manifest.json'
+const GLOB_PATHS = ['**/*', '!node_modules', '!.*']
+
+async function main(configFile) {
+  const manifest = { redirects: {}, aliases: {}, paths: {} }
+  const config = TOML.parse(fs.readFileSync(configFile))
+  const globConfig = { cwd: config.site.bucket, followSymbolicLinks: false }
+  const entryPoint = config.site['entry-point'] || 'workers-site'
+
+  const files = await globby(GLOB_PATHS, globConfig)
+
+  files.sort().forEach(f => {
+    const filepath = path.join('/', f)
+    const alias = matchFindReplace(config.aliases, filepath)
+
+    if (alias) {
+      manifest.aliases[alias] = filepath
+    }
+
+    manifest.paths[filepath] = {
+      hash: generateHash(config.site.bucket, filepath),
+      cacheControl: matchFind(config['cache-control'], filepath) || undefined,
+    }
+  })
+
+  Object.keys(manifest.aliases).forEach(a => {
+    if (manifest.paths[a]) {
+      console.warn('Alias obscures path:', a)
+    }
+  })
+
+  if (config.directoryIndexes) {
+    const dirs = await globby(GLOB_PATHS, { ...globConfig, onlyDirectories: true })
+
+    dirs.unshift('')
+
+    dirs.forEach(d => {
+      const basepath = path.join('/', d)
+      const fullpath = path.join(basepath, '/')
+      const target = path.join(basepath, config.directoryIndexes)
+
+      if (manifest.paths[target]) {
+        if (basepath != fullpath) {
+          manifest.redirects[basepath] = fullpath
+        }
+        manifest.aliases[fullpath] = target
+      }
+    })
+  }
+
+  manifest.cors = config.cors
+
+  const destination = path.join(entryPoint, MANIFEST_FILE)
+  fs.writeFileSync(destination, JSON.stringify(manifest, null, ' '))
+  console.log('Manifest written:', destination)
+}
+
+function generateHash(basePath, f) {
+  const contents = fs.readFileSync(basePath + '/' + f)
+  const hash = createHash('md5').update(contents)
+
+  return hash.digest('base64').slice(0, -2)
+}
+
+function matchFind(space, p) {
+  if (!space) {
+    return null
+  }
+
+  for (const k in space) {
+    if (p.match(k)) {
+      return space[k]
+    }
+  }
+
+  return null
+}
+
+function matchFindReplace(space, p) {
+  if (!space) {
+    return null
+  }
+
+  for (const k in space) {
+    const re = new RegExp(k)
+
+    if (p.match(re)) {
+      return p.replace(re, space[k])
+    }
+  }
+
+  return null
+}
+
+;(async () => {
+  try {
+    await main(process.argv[2] || './wrangler.toml')
+  } catch (e) {
+    console.error('build-manifest:', e.toString())
+  }
+})()

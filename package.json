@@ -1,0 +1,41 @@
+{
+  "name": "@doxyme/worker-sites-improved",
+  "version": "1.0.0",
+  "description": "Helpful Helpers for Cloudflare Worker Sites",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "build-manifest": "./bin/build-manifest"
+  },
+  "scripts": {
+    "prepack": "npm run build",
+    "build": "tsc -d",
+    "format": "prettier --write '**/*.js'",
+    "pretest": "npm run build",
+    "test": "ava dist/test/*.js --verbose"
+  },
+  "keywords": [
+    "Cloudflare",
+    "Worker",
+    "Sites"
+  ],
+  "author": "Heath Morrison",
+  "license": "MIT",
+  "ava": {
+    "require": [
+      "esm"
+    ]
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^1.0.1",
+    "@iarna/toml": "^2.2.3",
+    "ava": "^1.4.1",
+    "prettier": "^2.0.2",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.2"
+  },
+  "dependencies": {
+    "@cloudflare/kv-asset-handler": "^0.0.9",
+    "uuidv4": "^6.0.6"
+  }
+}
