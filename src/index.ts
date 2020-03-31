@@ -28,27 +28,23 @@ const resolvePath = (pathname: string, basepath: string) => {
 function init(config : Config) {
   // Note, mount points basically must be a "directory".
   // If somebody concocts a scenario where this is not the case, let Heath know.
-  config = { ...config, basepath: normalizePath(config.basepath).replace(/\/$/g, '') }
-
-  return {
-    handlerHandler: handlerHandler.bind(null, config),
-    addOptionsEventListener: addOptionsEventListener.bind(null, config),
-    addRequestEventListener: addRequestEventListener.bind(null, config),
-  }
+  return { ...config, basepath: normalizePath(config.basepath).replace(/\/$/g, '') }
 }
 
-function addOptionsEventListener(config: Config) {
-  addEventListener('fetch', (event: FetchEvent) => {
+
+function getOptionsEventListener(config: Config) {
+  return (event: FetchEvent) => {
     if (event.request.method === 'OPTIONS') {
       event.respondWith(handlerHandler(config, event, handleOptionsRequest))
     }
-  })  
+  }
 }
 
-function addRequestEventListener(config : Config) {
-  addEventListener('fetch', (event: FetchEvent) => {
+
+function getRequestEventListener(config : Config) {
+  return (event: FetchEvent) => {
     event.respondWith(handlerHandler(config, event, handleEvent))
-  })
+  }
 }
 
 async function handlerHandler(config: Config, event: FetchEvent, fn: Function, ...args: any[]) {
@@ -183,4 +179,8 @@ function applyResponseHeaders(response: Response, pathManifest: any) {
   return response
 }
 
-export { init }
+export default {
+  init,
+  getOptionsEventListener,
+  getRequestEventListener
+}
