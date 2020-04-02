@@ -133,7 +133,7 @@ function handleOptionsRequest(config, event) {
         // Handle standard OPTIONS request
         headers.set('Allow', 'GET, HEAD, OPTIONS');
     }
-    return new Response(null, { headers: headers });
+    return new Response(null, { status: 204, headers: headers });
 }
 function handleEvent(config, event) {
     return __awaiter(this, void 0, void 0, function () {
