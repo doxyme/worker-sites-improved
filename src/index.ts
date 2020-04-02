@@ -87,7 +87,7 @@ function handleOptionsRequest(config : Config, event: FetchEvent) {
     headers.set('Allow', 'GET, HEAD, OPTIONS')
   }
 
-  return new Response(null, { headers })
+  return new Response(null, { status: 204, headers })
 }
 
 async function handleEvent(config : Config, event: FetchEvent) {
